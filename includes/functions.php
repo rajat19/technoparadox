@@ -1,7 +1,8 @@
 <?php
 class Users {
 	public $tableName = 'users';
-	
+	public $connect;
+
 	function __construct(){
 		//database configuration
 		$dbServer = 'localhost';

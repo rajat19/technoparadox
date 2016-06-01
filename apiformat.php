@@ -24,7 +24,8 @@ $user = new Users();
 if(isset($_POST['locdetect'])) {
     echo '<form action="apiformat.php" method="POST">
     <select name="list">';
-        $conn = mysqli_connect('localhost', 'root', '', 'technoparadox');
+        // $conn = mysqli_connect('localhost', 'root', '', 'technoparadox');
+    	$conn = $user->connect;
         $q1 = mysqli_query($conn, "SELECT * FROM locations ORDER BY city");
         while($row = mysqli_fetch_array($q1)) {
             $state = $row['state'];
