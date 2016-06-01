@@ -50,7 +50,7 @@ class Users {
 
 	function findPeople($id) {
 		$current = date("Y-m-d H:i:s", strtotime("+5 hours 30 minutes"));
-		$query = mysqli_query($this->connect, "SELECT * FROM $this->tableName s, $this->tableName t WHERE s.oauth_uid!='$id' AND s.modified < '$current' AND s.modified > t.logout AND s.oauth_uid = t.oauth_uid");
+		$query = mysqli_query($this->connect, "SELECT * FROM $this->tableName s, $this->tableName t WHERE s.oauth_uid!='$id' AND s.modified < '$current' AND s.modified > t.logout AND s.oauth_uid = t.oauth_uid OR s.logout IS NULL");
 		return $query;
 	}
 
@@ -62,25 +62,26 @@ class Users {
 	}
 
 	function calculatedistance($address) {
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($curl, CURLOPT_SSLVERSION,3);
-    // Set some options - we are passing in a useragent too here
-    curl_setopt_array($curl, array(
-        CURLOPT_RETURNTRANSFER => 1,
-        CURLOPT_URL => $address,
-        CURLOPT_USERAGENT => 'Rajat Srivastava'
-    ));
-    // Send the request & save response to $resp
-    $resp = curl_exec($curl);
-    if(!curl_exec($curl)){
-        die('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl));
-    }
-    // Close request to clear up some resources
-    curl_close($curl);
-    $arr = json_decode($resp, true);
-    return $arr;
-}
+	    $curl = curl_init();
+	    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+	    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+	    curl_setopt($curl, CURLOPT_SSLVERSION,3);
+	    // Set some options - we are passing in a useragent too here
+	    curl_setopt_array($curl, array(
+	        CURLOPT_RETURNTRANSFER => 1,
+	        CURLOPT_URL => $address,
+	        CURLOPT_USERAGENT => 'Rajat Srivastava'
+	    ));
+	    // Send the request & save response to $resp
+	    $resp = curl_exec($curl);
+	    if(!curl_exec($curl)){
+	        die('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl));
+	    }
+	    // Close request to clear up some resources
+	    curl_close($curl);
+	    $arr = json_decode($resp, true);
+
+	    return $arr;
+	}
 }
 ?>

@@ -47,7 +47,10 @@ color:#999999;
                 jsonLatLong = xmlhttp.responseText;
                 document.getElementById("txtHint").innerHTML = jsonLatLong;
                 console.log(jsonLatLong);
-                savetodb();
+                var obj = JSON.parse(jsonLatLong);
+                var lat = obj.location.lat;
+                var lon = obj.location.lng;
+                savetodb(lat,lon);
             }
         };
         xmlhttp.open("POST", add + key, true);
@@ -65,6 +68,18 @@ color:#999999;
         };
         xmlhttp.open("POST", add, true);
         xmlhttp.send();   
+    }
+
+    function savetodb(lat,lon) {
+        var add = "savetodb.php?lat="+lat+"&lon="+lon;
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+            }
+        };
+        xmlhttp.open("GET", add, true);
+        xmlhttp.send();
     }
 </script>
 </head>
@@ -87,7 +102,7 @@ color:#999999;
     echo '<p><b>Google+ Link : </b>' . $_SESSION['google_data']['link'].'</p>';
     echo '<p><b>You are login with : </b>Google</p>';
     echo '<p><b>You current location : </b>'.$ulat.' , '.$ulon.'</p>';
-    echo '<p><b>Location detection : </b><form action="account.php" method="POST"><input type="submit" value="Get Location" name="setlocg"></form><form action="account.php" method="POST"><input type="submit" value="Set Location" name="locdetect"></form></p>';
+    echo '<p><b>Location detection : </b><button onclick="getgooglelocation();">Get Location</button> or <form action="account.php" method="POST"><input type="submit" value="Set Location" name="locdetect"></form></p>';
     echo '<p><b>Find nearest friends : </b><form action="account.php" method="POST"><input type="submit" value="Find Active people" name="near"></form></p>';
     echo '<p><b>Logout from <a href="logout.php?logout">Google</a></b></p>';
     echo '</div>';
@@ -160,12 +175,13 @@ if(isset($_POST['setlocm'])) {
 }
 
 if(isset($_POST['near'])) {
-    $q = $user->findPeople($_SESSION['google_data']['id']);
+    $id2 = $_SESSION['google_data']['id'];
+    $q = $user->findPeople($id2);
     $userlat = $_SESSION['lat'];
     $userlon = $_SESSION['lon'];
     $address = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=$userlat,$userlon&destinations=";
     $id = 0;$a = array();
-    while($row = mysqli_fetch_array($q)) {
+    while($row = mysqli_fetch_array($q) &&$row['oauth_uid']!=$id2) {
         $flat = $row['lat'];
         $flon = $row['lon'];
         $fid = $row['oauth_uid'];

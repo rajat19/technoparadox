@@ -12,7 +12,7 @@
                 jsonLatLong = xmlhttp.responseText;
                 document.getElementById("txtHint").innerHTML = jsonLatLong;
                 console.log(jsonLatLong);
-
+                
             }
 		};
 		xmlhttp.open("POST", add + key, true);

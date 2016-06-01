@@ -1,7 +1,57 @@
 <?php
 session_start();
 if(!isset($_SESSION['google_data'])):header("Location:index.php");endif;
+?>
 
+<script type="text/javascript">
+    function getgooglelocation() {
+        var add = "https://www.googleapis.com/geolocation/v1/geolocate?key=";
+        var key = "AIzaSyAErQ52cVQDdBBVFFuHP5vBksvVEjWNXvE";
+        var jsonLatLong;
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                jsonLatLong = xmlhttp.responseText;
+                document.getElementById("txtHint").innerHTML = jsonLatLong;
+                console.log(jsonLatLong);
+                var obj = JSON.parse(jsonLatLong);
+                var lat = obj.location.lat;
+                var lon = obj.location.lng;
+                savetodb(lat,lon);
+            }
+        };
+        xmlhttp.open("POST", add + key, true);
+        xmlhttp.send();  
+    }
+
+    function getmanuallocation() {
+        var add = "getaddress.php";
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                document.getElementById("hiddiv").innerHTML = xmlhttp.responseText;
+            }
+        };
+        xmlhttp.open("POST", add, true);
+        xmlhttp.send();   
+    }
+
+    function savetodb(lat,lon) {
+        var add = "savetodb.php?lat="+lat+"&lon="+lon;
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+            }
+        };
+        xmlhttp.open("GET", add, true);
+        xmlhttp.send();
+    }
+</script>
+<p id="txtHint"></p>
+<?php
 include 'includes/functions.php';
 $profile = array(); $nearest = array(); $myloc = array();
 $profile['oauth_uid'] = $_SESSION['google_data']['id'];
@@ -9,18 +59,21 @@ $profile['picture'] = $_SESSION['google_data']['picture'];
 $profile['name'] = $_SESSION['google_data']['name'];
 $profile['gender'] = $_SESSION['google_data']['gender'];
 $profile['email'] = $_SESSION['google_data']['email'];
-$profile['lat'] = $_SESSION['lat'];
-$profile['lon'] = $_SESSION['lon'];
+
+$user = new Users();
+$myloca = $user->getLoc($_SESSION['google_data']['id']);
+$profile['lat'] = $_SESSION['lat'] = $myloca['lat'];
+$profile['lon'] = $_SESSION['lon'] = $myloca['lon'];
 
 print_r($profile);
-echo '<p><b>Location detection : </b><form action="apiformat.php" method="POST"><input type="submit" value="Get Location" name="setlocg"></form><form action="apiformat.php" method="POST"><input type="submit" value="Set Location" name="locdetect"></form></p>';
+echo '<p><b>Location detection : </b><button onclick="getgooglelocation();">Get Location</button><form action="apiformat.php" method="POST"><input type="submit" value="Set Location" name="locdetect"></form></p>';
 echo '<p><b>Find nearest friends : </b><form action="apiformat.php" method="POST"><input type="submit" value="Find Active people" name="near"></form></p>';
 
 $curl = curl_init();
 curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($curl, CURLOPT_SSLVERSION,3);
-$user = new Users();
+
 if(isset($_POST['locdetect'])) {
     echo '<form action="apiformat.php" method="POST">
     <select name="list">';
@@ -41,33 +94,6 @@ if(isset($_POST['locdetect'])) {
     </form>';
 }
 
-if(isset($_POST['setlocg'])) {
-    // Set some options - we are passing in a useragent too here
-    curl_setopt_array($curl, array(
-        CURLOPT_RETURNTRANSFER => 1,
-        CURLOPT_URL => 'https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyAErQ52cVQDdBBVFFuHP5vBksvVEjWNXvE',
-        CURLOPT_USERAGENT => 'Rajat Srivastava',
-        CURLOPT_POST => 1,
-        CURLOPT_POSTFIELDS => array(
-        
-        )
-    ));
-    // Send the request & save response to $resp
-    $resp = curl_exec($curl);
-    if(!curl_exec($curl)){
-        die('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl));
-    }
-    // Close request to clear up some resources
-    curl_close($curl);
-
-    $locg = json_decode($resp, true);
-    // print_r($locg);
-    $lat = $locg['location']['lat'];
-    $lon = $locg['location']['lng'];
-    $_SESSION['lat'] = $lat;
-    $_SESSION['lon'] = $lon;
-    $user->addLoc($_SESSION['google_data']['id'], $lat, $lon);
-}
 if(isset($_POST['setlocm'])) {
     $add = explode("$", $_POST['list']);
     // print_r($add);
@@ -79,7 +105,8 @@ if(isset($_POST['setlocm'])) {
 }
 
 if(isset($_POST['near'])) {
-    $q = $user->findPeople($_SESSION['google_data']['id']);
+	$id = $_SESSION['google_data']['id'];
+    $q = $user->findPeople($id);
     $userlat = $_SESSION['lat'];
     $userlon = $_SESSION['lon'];
     $address = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=$userlat,$userlon&destinations=";
@@ -117,11 +144,13 @@ function finalapi($profile, $near, $myloc) {
 	$final[0]['nearest'] = $near;
 
 	$json = json_encode($final);
+	echo "JSON => <br>";
+	print_r($json);
+	echo "<br><br>";
 	echo "Array => <br>";
 	echo "<pre>";
 	print_r($final);
 	echo "</pre>";
-	echo "JSON => <br>";
-	print_r($json);
+	
 }
 ?>
